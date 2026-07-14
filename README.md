@@ -34,8 +34,6 @@ git clone https://github.com/rollingSirius/equity-research-skill.git ~/.claude/s
 git clone https://github.com/rollingSirius/equity-research-skill.git .claude/skills/equity-research
 ```
 
-安装后直接对 Claude 说："帮我研究一下 NVDA" / "分析下 Marvell 值不值得买"。
-
 ### Claude Desktop / Cowork
 
 把本仓库打包为 zip（或下载 Release），在 **Settings → Capabilities → Skills** 中上传。
@@ -49,6 +47,24 @@ This skill is plain Markdown — any file-reading agent can use it:
 1. 把本仓库放进项目目录（如 `skills/equity-research/`）。
 2. 在你的 Agent 配置（如 Codex 的 `AGENTS.md`）中加入一句：
    > 当用户要求研究/分析某只股票时，先读取并遵循 `skills/equity-research/SKILL.md` 的完整流程。
+
+## 使用 Usage
+
+**方式一：自然语言自动触发（Claude Code / Claude Desktop / Cowork）**
+Auto-trigger — just ask naturally:
+
+> "帮我研究一下 NVDA" ｜ "分析下 Marvell 值不值得买" ｜ "Is AMD overvalued?"
+
+只要出现「公司名/代码 + 投研意图」，技能就会按 `SKILL.md` 的描述自动触发。
+
+**方式二：显式指定技能** Explicit invocation per tool:
+
+| 工具 Tool | 调用示例 Example |
+|---|---|
+| **Claude Code** | 斜杠命令：`/equity-research 分析 NVDA`；或说："用 equity-research 技能研究 TSLA" |
+| **Claude Desktop / Cowork** | 对话中说："用 equity-research 技能帮我看看 AAPL 值不值得买" |
+| **Codex CLI** | 无原生技能机制，配置 `AGENTS.md`（见上）后说："按 equity-research 流程分析 NVDA"；或直接说："先读 skills/equity-research/SKILL.md，再按它分析 NVDA" |
+| **其他 Agent** | 提示词加一句："先读取 skills/equity-research/SKILL.md 并严格按其流程执行，然后研究 <股票>" |
 
 ## 依赖 Dependencies
 
