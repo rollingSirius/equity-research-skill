@@ -1,16 +1,33 @@
 # 数据源操作手册
 
 目录：
+0. 工具可用性探测与降级路径（先读）
 1. IBKR（价格与市场数据）
-2. Morningstar（公允价值/护城河，无专用连接器）
-3. 财报与基本面（SEC EDGAR 优先）
+2. Morningstar（公允价值/护城河）
+3. 财报与基本面（SEC EDGAR 优先；A股/港股见 markets-cn-hk.md）
 4. 分析师评级与目标价
 5. 新闻与催化剂
 6. 数据对账规则
 7. 财年口径陷阱
 8. 市值计算
 
-> 工具名说明：IBKR 连接器的工具在不同环境下前缀可能不同（形如 `mcp__<id>__search_contracts`）。按**功能名**识别即可：`search_contracts`、`get_price_snapshot`、`get_price_history`、`get_price_history`。本手册用功能名指代。
+> 工具名说明：连接器工具在不同环境下前缀可能不同（形如 `mcp__<id>__search_contracts`），且部分环境要求先搜索/加载工具后才能调用。按**功能名**识别即可：`search_contracts`、`get_price_snapshot`、`get_price_history`。本手册用功能名指代。
+
+---
+
+## 0. 工具可用性探测与降级路径（先读）
+
+采集开始前，先确认当前会话实际可用的工具（含需要加载后才可见的延迟工具）。**任何数据源缺失都不中断流程**：按下表降级，并在报告末尾"数据来源与时间戳清单"里如实标注降级原因与精度损失。
+
+| 数据需求 | 首选 | 次选 | 兜底 | 降级时必须标注 |
+|---|---|---|---|---|
+| 实时/历史行情 | IBKR 连接器 | Morningstar 连接器或行情页 web_fetch | WebSearch 报价快照 | 来源、延迟级别、是否收盘价 |
+| 公允价值/护城河/星级 | **Morningstar 专用连接器（若已接入）** | web_fetch Morningstar 个股页 | WebSearch 其分析文章/转引 | 转引需带原始发布日期；量化评级≠分析师公允价值 |
+| 财报与分部数据 | 一手申报（EDGAR / 巨潮 / 披露易） | 财务数据聚合站交叉核对 | — | 聚合站口径以原始申报复核 |
+| 分析师评级/目标价 | 聚合站（按市场选，见第 4 节与 markets-cn-hk.md） | WebSearch | — | 抓取日期与覆盖家数 |
+| 文件输出（docx 等） | 对应技能 | 降级为 Markdown | — | 向用户说明格式降级 |
+
+原则：工具调用连续失败（如参数校验类故障）重试不超过 2–3 次即降级，把时间留给分析而不是和接口搏斗；失败项计入来源清单（写"未获取到 + 原因"）。
 
 ---
 
@@ -28,6 +45,8 @@
 - `MVLL`(2X Long)、`MRVU`(Bull 2X)、`MRVY`(期权 ETP) ❌ 杠杆/衍生 ETF
 
 取价务必用主挂牌的那条。
+
+**非美股标的**（A股/港股/H股、A+H 双重上市）：合约挑选规则、Connect 通道代码、双边各解析一次等差异项见 `markets-cn-hk.md` 第 1 节；双重上市标的两地合约都要解析。
 
 ### 1.2 实时快照 `get_price_snapshot`
 参数：`contract_id`、`exchange`（可用 `"SMART"` 取最优，或主交易所）、`market_data_names`（数组，只取需要的字段以提速）。常用字段：
@@ -56,7 +75,7 @@
 
 ## 2. Morningstar（公允价值 / 护城河）
 
-无专用 MCP，用联网获取。优先 `web_fetch` 个股页：`https://www.morningstar.com/stocks/<exchange>/<ticker>/quote`（美股 NASDAQ 用 `xnas`，NYSE 用 `xnys`，如 `.../stocks/xnas/mrvl/quote`）。若是客户端渲染、抓不到正文，改用其分析文章页或 `WebSearch`。
+**取数优先级**：① 若会话已接入 Morningstar 专用连接器（MCP），优先用其工具直接取结构化字段；② 否则 `web_fetch` 个股页：`https://www.morningstar.com/stocks/<MIC>/<ticker>/quote`（NASDAQ 用 `xnas`、NYSE 用 `xnys`；港股 `xhkg`、上证 `xshg`、深证 `xshe`，如 `.../stocks/xnas/mrvl/quote`、`.../stocks/xhkg/00700/quote`）；③ 客户端渲染抓不到正文时，改用其分析文章页或 `WebSearch`。A股/港股覆盖稀疏与"量化评级≠分析师公允价值"的区分见 `markets-cn-hk.md` 第 3 节。
 
 要取的字段：
 - **Fair Value Estimate（公允价值）** —— 注意标注日期。
@@ -68,6 +87,8 @@
 ---
 
 ## 3. 财报与基本面（SEC EDGAR 优先）
+
+> A股用巨潮资讯网、港股用披露易，及业绩预告/盈利警告等差异制度，见 `markets-cn-hk.md` 第 2 节。以下为美股路径。
 
 - 一手来源：`https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=<ticker>&type=10-K`（及 10-Q、8-K）。年报 10-K、季报 10-Q、业绩公告 8-K（含新闻稿 EX-99.1）。
 - 收入分部、地区、客户集中度：见 10-K 的 MD&A 与分部附注、风险因素（客户集中度常在此披露）。
@@ -109,6 +130,7 @@
 很多公司财年 ≠ 自然年，季度标签容易误读：
 - 例：Marvell 财年于 1 月底/2 月初结束，"Q1 FY2027" 实际对应 ~2026 年 5 月初结束的季度。
 - **务必把财年/财季标签映射到自然日历**，再与价格、新闻时间对齐；报告中同时写出财季与对应自然时间，避免读者误解。
+- A股法定 12-31 年结（无此陷阱）；港股无强制、3-31 年结常见（如联想），先查年结日。详见 `markets-cn-hk.md` 第 4 节。
 
 ---
 
