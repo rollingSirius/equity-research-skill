@@ -6,8 +6,10 @@ description: >-
   值不值得买"、"给某只股票写一份投研报告/研报"、"is this stock a buy / overvalued / fairly
   valued"，或针对某个具名上市公司询问 估值/护城河/财报/目标价/多空逻辑/投资建议（valuation, moat,
   fundamentals, fair value, price target, bull/bear case）。只要出现「公司名或股票代码 +
-  任何投研意图」就应触发，即使用户没有明确说"报告"二字。技能会跑完整流程：通过 IBKR 取实时价格，通过联网获取 Morningstar
-  公允价值与护城河及卖方观点，产出结构化九章研报（含多方法估值交叉验证），并保存为带来源与时间戳的文件。Do NOT use
+  任何投研意图」就应触发，即使用户没有明确说"报告"二字。覆盖美股、港股、A股，含 A/H
+  双重上市溢价对比。技能会跑完整流程：探测会话内可用数据源（IBKR/Morningstar
+  连接器等，缺失时自动降级到联网检索并标注），产出结构化九章研报——估值一律由脚本计算，以反向
+  DCF 与三情景概率加权做交叉验证，结论按预注册标定规则映射——并保存为带来源与时间戳的文件。Do NOT use
   for 单纯的一句话报价、宏观/大盘评论、组合层面的资产配置、或非股票类工具（债券/期货/外汇本身）。
 ---
 
@@ -30,17 +32,18 @@ description: >-
 
 ### Step 0 · 明确标的与口径
 - 确认**公司名 + 股票代码 + 上市地/交易所**（如 Marvell / MRVL / NASDAQ）。若用户只给了模糊名称或多地上市，先用一句话确认，不要猜错标的。
+- **A/H 双重上市标的**：默认做双边对比、分市场给结论（含 A/H 溢价模块，见 `references/markets-cn-hk.md` 第 5 节）；用户明确只要一边时才单边。
 - 确认**输出格式**：默认 **Markdown (.md)**；用户要正式留存可改 Word（.docx，调用 docx 技能）。
 - 确认**报告币种/财年口径**：注意很多公司财年≠自然年（见 `references/data-sources.md` 的财年陷阱）。
 
 ### Step 1 · 并行采集数据
-**尽量在同一轮并行发起**，提高效率。三条线：
+**先探测工具，再并行采集**：确认会话内实际可用的连接器与工具（含需先加载的延迟工具），按 `references/data-sources.md` 第 0 节的降级表确定每条数据线的路径——任何工具缺失或连续失败都不中断流程，降级并在来源清单标注。随后**尽量在同一轮并行发起**三条线：
 
-1. **IBKR（实时/历史价格、市场数据）** — 已连接的 Interactive Brokers MCP。先 `search_contracts` 解析出正确合约，再 `get_price_snapshot` 取现价/涨跌/52周高低/YTD/股息率，`get_price_history` 取走势。**务必挑对合约**（避开同名生物公司、海外重复挂牌、杠杆 ETF）。详见 `references/data-sources.md`。
-2. **Morningstar（公允价值/护城河/星级）** — 无专用连接器，用联网获取（fetch morningstar.com 个股页或其分析文章）。取公允价值估算、Economic Moat 评级、星级、不确定性评级、资本配置评价。
+1. **IBKR（实时/历史价格、市场数据）** — 已连接的 Interactive Brokers MCP。先 `search_contracts` 解析出正确合约，再 `get_price_snapshot` 取现价/涨跌/52周高低/YTD/股息率，`get_price_history` 取走势。**务必挑对合约**（避开同名生物公司、海外重复挂牌、杠杆 ETF）。详见 `references/data-sources.md`；A股/港股合约差异见 `references/markets-cn-hk.md`。
+2. **Morningstar（公允价值/护城河/星级）** — 优先用已接入的 Morningstar 专用连接器；无连接器时联网获取（fetch morningstar.com 个股页或其分析文章，多市场 URL 规则见 data-sources.md 第 2 节）。取公允价值估算、Economic Moat 评级、星级、不确定性评级、资本配置评价。
 3. **联网搜索（财报/分部/指引/分析师/新闻）** — 最新季报与电话会要点、按业务线/地区/客户的收入拆分、管理层指引、卖方评级与目标价分布、近 1–3 个月新闻与催化剂、高管背景与内部持股（SEC 文件）。检索技巧见 `references/data-sources.md`。
 
-财务历史（近 5 年营收/毛利率/经营利润率/FCF/ROIC/ROE、资产负债表）优先取自 SEC 10-K/10-Q/8-K 或财报披露原文。
+财务历史（近 5 年营收/毛利率/经营利润率/FCF/ROIC/ROE、资产负债表）优先取自申报原文：美股 SEC 10-K/10-Q/8-K，A股巨潮资讯网，港股披露易（差异见 markets-cn-hk.md）。
 
 ### Step 2 · 对账与时间戳
 - 汇总每个关键数字的来源与日期；冲突项按纪律对账。
@@ -53,7 +56,9 @@ description: >-
 
 ### Step 4 · 估值（多方法交叉验证）
 - **至少三种方法**并给出区间，最后汇总成表，给出相对当前股价的隐含上行/下行空间。
-- 方法与关键假设、敏感性分析、行业特定指标见 `references/valuation-methods.md`。
+- **所有 DCF 类计算一律用 `scripts/dcf.py` 执行（假设写成 JSON），禁止心算**——含正向三阶段、反向 DCF、WACC×g 敏感性、三情景概率加权。高估值/叙事型标的以反向 DCF 作为估值章节的开篇框架。
+- **结论标签（低估/合理/高估 + 动作）按 `valuation-methods.md` 第 7 节的预注册标定规则映射产出**，第一章与第九章必须与之可复算地一致；偏离规则须显式写出理由。
+- 方法细节、情景构建纪律、敏感性、行业特定指标见 `references/valuation-methods.md`。
 
 ### Step 5 · 保存并交付
 - 按确认的格式保存到输出目录（Markdown 直接写 .md；Word 用 docx 技能）。
@@ -63,7 +68,9 @@ description: >-
 
 - `references/report-template.md` — 九章报告模板与表格骨架。**撰写正文前必读。**
 - `references/data-sources.md` — IBKR / Morningstar / SEC / 分析师数据的具体取数方法、字段、对账与财年口径规则，以及常见坑位。**采集数据前必读。**
-- `references/valuation-methods.md` — 相对估值、DCF、SOTP、行业特定指标的做法与汇总表模板。**做估值章节前必读。**
+- `references/valuation-methods.md` — 相对估值、正向/反向 DCF、情景加权、SOTP、行业特定指标，及**结论标定规则**。**做估值章节前必读。**
+- `references/markets-cn-hk.md` — A股/港股/A+H 双重上市的差异项：合约解析、披露源、Morningstar 覆盖、财年、A/H 溢价模块。**非美股或双重上市标的必读。**
+- `scripts/dcf.py` — DCF 计算器（三阶段/反向/敏感性/加权/标定）。用法：`python scripts/dcf.py --config <假设.json>`，`--demo` 可自检。
 
 ## 四、质量自检（成稿前）
 
@@ -72,4 +79,6 @@ description: >-
 - 关键数字是否都有来源+时间戳？冲突是否已对账？
 - 估值是否≥3 种方法并汇总出区间与隐含空间？DCF 关键假设是否列出并做了敏感性？
 - 是否诚实标注了"未获取到"与"无法判断"，而非编造？
+- 结论标签是否由 valuation-methods.md 第 7 节的标定规则产出（含动作矩阵与否决项）？估值数字是否全部由脚本计算并留有假设 JSON？
+- A/H 双重上市标的是否完成溢价模块并分市场给出结论？工具降级项是否已在来源清单标注？
 - 是否回答了收尾核心问题："如果今天这是一笔现金，我会买入它吗？为什么？"并给出 3–5 个持续监控指标？
