@@ -9,7 +9,7 @@ An [Agent Skill](https://docs.claude.com/en/docs/claude-code/skills) that turns 
 - **多市场覆盖**：美股 / 港股 / A股，A/H 双重上市标的默认做溢价对比并分市场给结论。US, HK and China A-shares, with an A/H premium module for dual-listed names.
 - **五步工作流**：确认标的 → 探测可用数据源并并行采集（行情 / Morningstar / 财报与卖方观点，工具缺失自动降级并标注）→ 数据对账与时间戳 → 按九章模板撰写 → 估值交叉验证并交付文件。
 - **九章报告结构**：一页速览、业务详情、竞争与护城河、管理层与治理、财务分析、多方法估值、分析师观点汇总、新闻与催化剂、投资结论。
-- **估值纪律**：至少三种方法交叉验证——反向 DCF（证伪现价）+ 三情景概率加权 DCF + 相对估值/SOTP；**所有 DCF 计算由 `scripts/dcf.py` 执行，禁止心算**，假设以 JSON 留档。
+- **估值纪律**：至少三种方法交叉验证——反向 DCF（证伪现价）+ 三情景概率加权 DCF + **三要素/EPV（资产重置·盈利能力价值·franchise 成长，含 EPV÷净资产护城河验证）** + 相对估值/SOTP；**所有计算（含 EPV）由 `scripts/dcf.py` 执行，禁止心算**，假设以 JSON 留档。
 - **结论可复现**：估值标签与买卖动作按预注册标定规则映射产出（含动作矩阵与治理否决项），同一组数字不会两次给出不同结论。
 - **研究纪律**：事实与判断分离、每个关键数据标注来源与时间、冲突数据显式对账、缺失数据如实标注"未获取到"。
 
@@ -21,11 +21,14 @@ equity-research-skill/
 ├── references/
 │   ├── report-template.md          # 九章报告模板与表格骨架
 │   ├── data-sources.md             # 取数手册：工具探测与降级表、行情 / Morningstar / SEC / 分析师数据与对账规则
-│   ├── valuation-methods.md        # 估值方法：相对估值、正向/反向 DCF、情景加权、SOTP + 结论标定规则
+│   ├── valuation-methods.md        # 估值方法：相对估值、正向/反向 DCF、情景加权、三要素/EPV、SOTP + 结论标定规则
 │   └── markets-cn-hk.md            # A股/港股/A+H 差异手册：合约解析、披露源、财年、A/H 溢价模块
-└── scripts/
-    └── dcf.py                      # DCF 计算器：三阶段/反向/敏感性/概率加权/标定（python dcf.py --demo 自检）
+├── scripts/
+│   └── dcf.py                      # 估值计算器：三阶段/反向/敏感性/概率加权/标定 + epv（EPV·护城河验证·franchise 成长·买点阶梯）
+└── EXAMPLE_NVDA.md                 # 示例产出：一份完整的 NVDA 研报，仅供参考效果，不参与技能执行
 ```
+
+> `EXAMPLE_NVDA.md` 只是给用户看最终产出长什么样的样例，**不会被 SKILL.md 加载、不影响技能执行**。
 
 ## 安装 Installation
 
