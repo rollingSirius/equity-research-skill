@@ -26,6 +26,7 @@ Most AI stock analysis stops at “company summary + recent news + vague valuati
 - **Five-step workflow**: confirm ticker and listing venue -> detect data tools and collect data in parallel -> reconcile sources and timestamps -> write a nine-chapter report -> run valuation cross-checks and deliver a file.
 - **Nine-chapter report**: quick view, business details, competition and moat, management and governance, financial analysis, valuation, analyst consensus, news and catalysts, and investment conclusion.
 - **Nine-chapter earnings mode**: verdict and snapshot, expectation gap, segment/KPI analysis, earnings quality, cash flow and capital allocation, guidance and call signals, competition and market reaction, model/valuation bridge, and thesis/action update.
+- **SaaS industry appendix**: for SaaS, subscription-software, and cloud-software companies, the skill adds ARR, NRR, RPO/cRPO, Rule of 40, sales efficiency, SBC, FCF, and reverse-DCF implied-requirement analysis.
 - **Valuation discipline**: at least three methods, including reverse DCF, probability-weighted scenario DCF, EPV / three-element analysis, relative valuation, or SOTP.
 - **Scripted calculations**: all DCF / EPV-style calculations must be run through `scripts/dcf.py`; assumptions are stored as JSON for auditability.
 - **Consistency checks**: `scripts/check_research_output.py` checks valuation labels, scenario probabilities, EPV parameters, margins, FCF, EPS, and cash-flow roll-forward math.
@@ -52,7 +53,8 @@ equity-research-skill/
 │   ├── earnings-mode.md            # Deep earnings workflow, coverage routing, model bridge, and nine-chapter template
 │   ├── data-sources.md             # Data-source playbook: tools, price data, Morningstar, filings, analysts
 │   ├── valuation-methods.md        # Valuation methods, DCF/EPV/SOTP rules, conclusion calibration
-│   └── markets-cn-hk.md            # China A-share, Hong Kong, and A/H dual-listing notes
+│   ├── markets-cn-hk.md            # China A-share, Hong Kong, and A/H dual-listing notes
+│   └── industry-saas.md            # SaaS industry deep-research appendix
 ├── scripts/
 │   ├── dcf.py                      # Valuation calculator: DCF, reverse DCF, sensitivity, scenario weighting, EPV
 │   └── check_research_output.py    # Financial and valuation consistency checker
@@ -111,6 +113,7 @@ Is AMD overvalued?
 Deeply analyze AAPL's latest earnings
 Review MSFT earnings and update the valuation
 Compare the A-share and H-share valuation gap for CATL
+Use the SaaS appendix to deeply analyze Salesforce / CRM
 ```
 
 Explicit invocation also works:

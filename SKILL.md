@@ -50,6 +50,8 @@ description: >-
 
 财报模式另须并行采集财报新闻稿、监管申报、演示材料、电话会文字稿、可核验的一致预期与业绩后价格反应；来源优先级、历史窗口和对账字段严格按 `references/earnings-mode.md` 执行。
 
+若标的是 SaaS / 订阅软件 / 云软件公司，在撰写业务、财务、财报和估值章节前读取 `references/industry-saas.md`，并按其中 KPI、模型、估值和红旗要求补充主模板。
+
 ### Step 2 · 对账与时间戳
 - 汇总每个关键数字的来源与日期；冲突项按纪律对账。
 - 把"事实"与"我的判断"在草稿里就分好层，避免成稿时混淆。
@@ -82,6 +84,7 @@ description: >-
 - `references/data-sources.md` — IBKR / Morningstar / SEC / 分析师数据的具体取数方法、字段、对账与财年口径规则，以及常见坑位。**采集数据前必读。**
 - `references/valuation-methods.md` — 相对估值、正向/反向 DCF、情景加权、**三要素/EPV（资产重置·盈利能力价值·franchise 成长）**、SOTP、行业特定指标，及**结论标定规则**。**做估值章节前必读。**
 - `references/markets-cn-hk.md` — A股/港股/A+H 双重上市的差异项：合约解析、披露源、Morningstar 覆盖、财年、A/H 溢价模块。**非美股或双重上市标的必读。**
+- `references/industry-saas.md` — SaaS/订阅软件行业附录：来源层级、KPI 字典、ARR/NRR/RPO/Rule of 40、模型驱动、估值方法、财报模式重点、护城河和红旗。**SaaS、云软件、订阅软件标的必读。**
 - `scripts/dcf.py` — 估值计算器（三阶段/反向/敏感性/概率加权/标定 + `epv` 块：EPV·护城河验证·franchise 成长·买点阶梯）。用法：`python scripts/dcf.py --config <假设.json>`，`--demo` 可自检。
 - `scripts/check_research_output.py` — 财务/估值一致性检查器：复核来源时间戳、估值标签、DCF 情景概率、EPV 参数、利润率/FCF/EPS/现金流勾稽与同比环比。用法：`python scripts/check_research_output.py --report <报告.md> --assumptions <估值.json> --financials <财务.csv>`，`--demo` 可自检。
 

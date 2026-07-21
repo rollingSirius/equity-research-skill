@@ -16,6 +16,7 @@
 |---|---|
 | 深度研究 | 完整研究模式输出九章个股研报，覆盖业务、竞争、治理、财务、估值、催化剂与投资结论。 |
 | 财报模式 | 财报模式不是摘要，而是九章财报深度分析，覆盖预期差质量、分部与 KPI、GAAP/Non-GAAP、现金流、电话会、模型与估值变动。 |
+| SaaS 行业附录 | 对 SaaS、订阅软件、云软件公司，额外拆 ARR、NRR、RPO/cRPO、Rule of 40、销售效率、SBC、FCF 和反向 DCF 隐含要求。 |
 | 可复算估值 | DCF、反向 DCF、三情景概率加权、EPV / 三要素法、SOTP 等估值必须由 `scripts/dcf.py` 执行，关键假设以 JSON 留档。 |
 | 一致性检查 | 成稿前用 `scripts/check_research_output.py` 检查估值标签、情景概率、EPV 参数、利润率、FCF、EPS 与现金流勾稽。 |
 | 来源纪律 | 关键数据必须标注来源与时间戳；冲突数据要对账；缺失数据必须写“未获取到”。 |
@@ -70,6 +71,8 @@
 - 相对估值：用同业倍数检查市场定价是否一致。
 - SOTP：适合多业务、多资产或分部差异极大的公司。
 
+如果标的是 SaaS / 订阅软件 / 云软件公司，skill 会额外读取 `references/industry-saas.md`，按 SaaS 专用 KPI、模型驱动、估值方法、财报重点、护城河和红旗清单补充主报告。
+
 ## 安装
 
 ### 最简单方法
@@ -119,6 +122,7 @@ git clone https://github.com/rollingSirius/equity-research-skill.git .claude/ski
 根据 MSFT 财报更新估值和投资结论
 腾讯最新业绩怎么看？按财报模式做深度分析
 帮我比较宁德时代 A 股和港股定价差异
+按 SaaS 行业附录深度分析 Salesforce / CRM
 ```
 
 也可以显式指定技能：
@@ -176,7 +180,8 @@ equity-research-skill/
 │   ├── earnings-mode.md            # 深度财报模式：覆盖分流、财报分析协议、模型变动桥与九章模板
 │   ├── data-sources.md             # 取数手册：工具探测、行情、Morningstar、申报文件、分析师数据
 │   ├── valuation-methods.md        # 估值方法：DCF、反向 DCF、情景加权、EPV、SOTP 与结论标定
-│   └── markets-cn-hk.md            # A股/港股/A+H 差异手册
+│   ├── markets-cn-hk.md            # A股/港股/A+H 差异手册
+│   └── industry-saas.md            # SaaS 行业深度研究附录
 ├── scripts/
 │   ├── dcf.py                      # 估值计算器：DCF、反向 DCF、敏感性、概率加权、EPV
 │   └── check_research_output.py    # 财务/估值一致性检查器
