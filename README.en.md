@@ -157,18 +157,6 @@ python3 scripts/check_research_output.py \
 
 `--financials` is optional, but recommended when historical or forecast financial tables exist. The script reports `P0` to `P3` findings: `P0/P1` should be fixed or explicitly explained in the report, `P2` marks quality risks, and `P3` is a light warning. Use `--demo` to verify the script itself.
 
-## Depth Roadmap
-
-Possible next steps for making the skill even deeper:
-
-1. **Industry-specific appendices**: add KPI, valuation, and risk templates for SaaS, semiconductors, banks, insurance, healthcare, consumer, energy, and utilities.
-2. **Model file output**: generate editable Excel / CSV three-statement models in addition to Markdown reports.
-3. **Consistency-check extensions**: add industry-specific checks, such as bank capital ratios, insurance embedded value, SaaS retention metrics, and semiconductor inventory cycles.
-4. **Coverage database**: store each report’s thesis, assumptions, fair value, rating, and key debates in structured form for continuing coverage.
-5. **Peer-set library**: maintain default comparable-company sets by industry and require the skill to explain peer inclusion or exclusion.
-6. **Earnings-call language tracking**: compare management wording across quarters for demand, orders, backlog, inventory, pricing, and risk signals.
-7. **Disconfirming-evidence section**: force every report to state what could prove the thesis wrong and what threshold would trigger a change.
-
 ## Design Philosophy
 
 This skill is **depth first**. It intentionally favors source discipline, transparent assumptions, reproducible valuation, and accountable conclusions over speed. It is best suited for serious investment research, long-term coverage, and investment memos rather than one-line quotes or generic market commentary.
