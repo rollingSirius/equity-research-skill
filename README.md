@@ -17,6 +17,7 @@
 | 深度研究 | 完整研究模式输出九章个股研报，覆盖业务、竞争、治理、财务、估值、催化剂与投资结论。 |
 | 财报模式 | 财报模式不是摘要，而是九章财报深度分析，覆盖预期差质量、分部与 KPI、GAAP/Non-GAAP、现金流、电话会、模型与估值变动。 |
 | 可复算估值 | DCF、反向 DCF、三情景概率加权、EPV / 三要素法、SOTP 等估值必须由 `scripts/dcf.py` 执行，关键假设以 JSON 留档。 |
+| 一致性检查 | 成稿前用 `scripts/check_research_output.py` 检查估值标签、情景概率、EPV 参数、利润率、FCF、EPS 与现金流勾稽。 |
 | 来源纪律 | 关键数据必须标注来源与时间戳；冲突数据要对账；缺失数据必须写“未获取到”。 |
 | 买方视角 | 结论按预注册标定规则映射，要求回答“如果今天这是一笔现金，我会买入它吗？为什么？” |
 | 多市场覆盖 | 支持美股、港股、A 股与 A/H 双重上市对比。 |
@@ -148,8 +149,22 @@ git clone https://github.com/rollingSirius/equity-research-skill.git .claude/ski
 - 一组关键数据来源与时间戳。
 - 至少三种估值方法的交叉验证。
 - `scripts/dcf.py` 生成的 DCF / EPV 计算结果。
+- `scripts/check_research_output.py` 生成的财务/估值一致性检查结果。
 - 可复查的估值假设 JSON。
 - 财报模式下的模型与公允价值变动桥。
+
+## 一致性检查脚本
+
+成稿前可以单独运行：
+
+```bash
+python3 scripts/check_research_output.py \
+  --report outputs/公司_代码_报告.md \
+  --assumptions outputs/公司_代码_valuation_assumptions.json \
+  --financials outputs/公司_代码_financials.csv
+```
+
+其中 `--financials` 可选；有历史或预测财务表时建议提供。脚本会按严重程度输出 `P0` 到 `P3`：`P0/P1` 应修正或在报告中显式解释，`P2` 是质量风险，`P3` 是轻提示。可用 `--demo` 自检脚本是否可运行。
 
 ## 文件结构
 
@@ -163,7 +178,8 @@ equity-research-skill/
 │   ├── valuation-methods.md        # 估值方法：DCF、反向 DCF、情景加权、EPV、SOTP 与结论标定
 │   └── markets-cn-hk.md            # A股/港股/A+H 差异手册
 ├── scripts/
-│   └── dcf.py                      # 估值计算器：DCF、反向 DCF、敏感性、概率加权、EPV
+│   ├── dcf.py                      # 估值计算器：DCF、反向 DCF、敏感性、概率加权、EPV
+│   └── check_research_output.py    # 财务/估值一致性检查器
 └── EXAMPLE_NVDA.md                 # 示例产出，仅供参考效果，不参与技能执行
 ```
 
@@ -174,7 +190,7 @@ equity-research-skill/
 | 依赖 | 必需性 | 说明 |
 |---|---|---|
 | 联网搜索 / 网页抓取 | 必需 | 获取行情、公司公告、监管申报、分析师评级和新闻。 |
-| Python 3 | 必需 | 运行 `scripts/dcf.py`，仅使用标准库。 |
+| Python 3 | 必需 | 运行 `scripts/dcf.py` 和 `scripts/check_research_output.py`，仅使用标准库。 |
 | Interactive Brokers (IBKR) MCP | 可选 | 实时行情快照与历史走势；未连接时按降级表改用公开网络行情源。 |
 | Morningstar MCP | 可选 | 有则直取结构化字段，无则网页抓取。 |
 | docx 技能 | 可选 | 仅当需要输出 Word 版报告。 |
@@ -185,7 +201,7 @@ equity-research-skill/
 
 1. **行业专用附录**：为 SaaS、半导体、银行、保险、医药、消费、能源、公用事业分别做专用 KPI、估值方法和风险清单。
 2. **模型文件输出**：除 Markdown 报告外，生成可编辑的 Excel / CSV 三表模型，并保留收入分部、成本、费用、资本开支、营运资本和股本假设。
-3. **一致性检查脚本**：增加脚本自动检查财务勾稽关系、同比/环比、利润率基点、自由现金流转换率和估值表是否自洽。
+3. **一致性检查脚本增强**：继续扩展更多行业特定勾稽项，例如银行资本充足率、保险内含价值、SaaS 留存率与半导体库存周期。
 4. **历史覆盖数据库**：把每次报告的结论、假设、公允价值、评级和关键分歧点结构化存档，方便做持续覆盖。
 5. **同业可比公司库**：按行业维护默认 peer set，并让 skill 解释为什么选择或剔除某些可比公司。
 6. **电话会语义追踪**：对管理层措辞、风险提示、订单/需求/库存语言做跨季度变化表。

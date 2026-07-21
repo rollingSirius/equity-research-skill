@@ -66,6 +66,7 @@ description: >-
 - **所有 DCF 类计算一律用 `scripts/dcf.py` 执行（假设写成 JSON），禁止心算**——含正向三阶段、反向 DCF、WACC×g 敏感性、三情景概率加权。高估值/叙事型标的以反向 DCF 作为估值章节的开篇框架。
 - **业务简单、利润稳定或缺乏可靠前瞻共识的标的，优先/并行用三要素/EPV 法（`dcf.py` 的 `epv` 块，同样禁止心算）**，并以 EPV÷净资产的多年趋势交叉验证第三章护城河判断；EPV 资本成本与 DCF 的 WACC 口径一致。冲突时以 Greenwald《价值投资：从格雷厄姆到巴菲特》为准。
 - **结论标签（低估/合理/高估 + 动作）按 `valuation-methods.md` 第 8 节的预注册标定规则映射产出**，第一章与第九章必须与之可复算地一致；偏离规则须显式写出理由。
+- **成稿前运行 `scripts/check_research_output.py` 做财务/估值一致性检查**：至少传入报告和估值 JSON；若有历史/预测财务 CSV，也一并传入。P0/P1 问题必须修正或在报告中显式解释。
 - 财报模式必须把新财报与指引转化为模型假设，展示关键预测和公允价值的变动桥；若没有旧模型，建立可审计的新基线。无论哪种情况，只要给出估值或投资动作，仍须至少三种方法交叉验证，不得只用业绩后 P/E 或卖方目标价代替完整估值。
 - 方法细节、情景构建纪律、敏感性、行业特定指标见 `references/valuation-methods.md`。
 
@@ -82,6 +83,7 @@ description: >-
 - `references/valuation-methods.md` — 相对估值、正向/反向 DCF、情景加权、**三要素/EPV（资产重置·盈利能力价值·franchise 成长）**、SOTP、行业特定指标，及**结论标定规则**。**做估值章节前必读。**
 - `references/markets-cn-hk.md` — A股/港股/A+H 双重上市的差异项：合约解析、披露源、Morningstar 覆盖、财年、A/H 溢价模块。**非美股或双重上市标的必读。**
 - `scripts/dcf.py` — 估值计算器（三阶段/反向/敏感性/概率加权/标定 + `epv` 块：EPV·护城河验证·franchise 成长·买点阶梯）。用法：`python scripts/dcf.py --config <假设.json>`，`--demo` 可自检。
+- `scripts/check_research_output.py` — 财务/估值一致性检查器：复核来源时间戳、估值标签、DCF 情景概率、EPV 参数、利润率/FCF/EPS/现金流勾稽与同比环比。用法：`python scripts/check_research_output.py --report <报告.md> --assumptions <估值.json> --financials <财务.csv>`，`--demo` 可自检。
 
 ## 四、质量自检（成稿前）
 
@@ -91,6 +93,7 @@ description: >-
 - 估值是否≥3 种方法并汇总出区间与隐含空间？DCF 关键假设是否列出并做了敏感性？
 - 是否诚实标注了"未获取到"与"无法判断"，而非编造？
 - 结论标签是否由 valuation-methods.md 第 8 节的标定规则产出（含动作矩阵与否决项）？估值数字是否全部由脚本计算并留有假设 JSON？
+- 是否已运行 `scripts/check_research_output.py`，且 P0/P1 问题已修正或在报告中解释？
 - 若用了三要素/EPV 法：是否以 EPV÷净资产的长期趋势对护城河做了财务验证，且与第三章定性结论一致？
 - A/H 双重上市标的是否完成溢价模块并分市场给出结论？工具降级项是否已在来源清单标注？
 - 若为财报模式：是否完成原始披露交叉核验、GAAP/Non-GAAP 对账、分部/KPI/利润率/现金流/指引分析，并解释业绩如何改变长期论点与估值？无旧报告时是否建立基线且没有伪造“变化”？
