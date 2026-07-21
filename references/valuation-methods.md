@@ -41,7 +41,7 @@
 - **永续增长 g**：一般 2–3%（不超过长期名义 GDP），高于此需强论证。
 - 股本稀释：SBC 重或有股票并购习惯的公司，显性期按年稀释率建模。
 
-执行：把假设写进 JSON，跑 `python scripts/dcf.py --config <file>`。输出企业价值 → 减净债 → ÷ 期末股本 = 每股内在价值，并附带退出 P/FCF 倍数用于自检（若隐含退出倍数明显高于成熟同业，说明永续假设在偷偷乐观）。
+执行：把假设写进 JSON，在本地、Agent 托管代码环境或在线 notebook 运行 `scripts/dcf.py --config <file>`；不要求本地预装 Python。输出企业价值 → 减净债 → ÷ 期末股本 = 每股内在价值，并附带退出 P/FCF 倍数用于自检（若隐含退出倍数明显高于成熟同业，说明永续假设在偷偷乐观）。
 
 **敏感性分析（必做）**：WACC × 永续 g 的 3×3 表（脚本内置）；成长股再做一张 收入增速 × 稳态利润率。
 
@@ -78,7 +78,7 @@
 - 保守增长率：历史 5 年净利润 CAGR 与宏观锚定（美≈6%、A≈9%，再加行业增速）**取其低**。
 - 哲学：绝不为不确定增长付高溢价，让成长成为安全边际外的免费礼物。
 
-**执行（禁止心算）**：假设写进 JSON 的 `epv` 块，跑 `python scripts/dcf.py --config <file>`——脚本输出 EPV 权益价值/每股、EPV÷净资产护城河判定与多年趋势、franchise 成长价值（自动在无法收敛/缺 ROIIC 时兜底简化式）、买点阶梯（底价<EPV<成长调整）与现价所处区间。`epv` 块字段：`earnings_basis`(NOPAT/net_income)、`normalized_earnings`、`coc`(=WACC)、`net_debt`、`excess_cash`、`shares`、`asset_value`、`price`、`growth:{g, roiic, mode}`、可选 `asset_series`(多年趋势)。
+**执行（禁止心算）**：假设写进 JSON 的 `epv` 块，在可用的本地或 AI/在线 Python 环境运行 `scripts/dcf.py --config <file>`——脚本输出 EPV 权益价值/每股、EPV÷净资产护城河判定与多年趋势、franchise 成长价值（自动在无法收敛/缺 ROIIC 时兜底简化式）、买点阶梯（底价<EPV<成长调整）与现价所处区间。`epv` 块字段：`earnings_basis`(NOPAT/net_income)、`normalized_earnings`、`coc`(=WACC)、`net_debt`、`excess_cash`、`shares`、`asset_value`、`price`、`growth:{g, roiic, mode}`、可选 `asset_series`(多年趋势)。
 
 **结论映射**：三层给出阶梯，按现价分层——≤底价：极端安全（烟蒂，须排除价值毁灭陷阱）；底价~EPV：**黄金击球区**（买到当前盈利，成长白送）；EPV~成长调整：合理，安全边际薄；>成长调整：偏贵。可令 range_low=EPV、range_high=成长调整并入第 7 节的综合区间（确定性高的消费/护城河股尤其适用），**最终标签仍由第 8 节标定规则产出**。
 

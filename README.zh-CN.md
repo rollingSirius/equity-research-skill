@@ -16,9 +16,8 @@
 |---|---|
 | 深度研究 | 完整研究模式输出九章个股研报，覆盖业务、竞争、治理、财务、估值、催化剂与投资结论。 |
 | 财报模式 | 财报模式不是摘要，而是九章财报深度分析，覆盖预期差质量、分部与 KPI、GAAP/Non-GAAP、现金流、电话会、模型与估值变动。 |
-| SaaS 行业附录 | 对 SaaS、订阅软件、云软件公司，额外拆 ARR、NRR、RPO/cRPO、Rule of 40、销售效率、SBC、FCF 和反向 DCF 隐含要求。 |
+| 八类行业附录 | 针对 SaaS、半导体、银行、保险、医药、消费、能源和公用事业，分别改变 KPI、模型、估值与反证框架。 |
 | 可复算估值 | DCF、反向 DCF、三情景概率加权、EPV / 三要素法、SOTP 等估值必须由 `scripts/dcf.py` 执行，关键假设以 JSON 留档。 |
-| 一致性检查 | 成稿前用 `scripts/check_research_output.py` 检查估值标签、情景概率、EPV 参数、利润率、FCF、EPS 与现金流勾稽。 |
 | 来源纪律 | 关键数据必须标注来源与时间戳；冲突数据要对账；缺失数据必须写“未获取到”。 |
 | 买方视角 | 结论按预注册标定规则映射，要求回答“如果今天这是一笔现金，我会买入它吗？为什么？” |
 | 多市场覆盖 | 支持美股、港股、A 股与 A/H 双重上市对比。 |
@@ -71,7 +70,34 @@
 - 相对估值：用同业倍数检查市场定价是否一致。
 - SOTP：适合多业务、多资产或分部差异极大的公司。
 
-如果标的是 SaaS / 订阅软件 / 云软件公司，skill 会额外读取 `references/industry-saas.md`，按 SaaS 专用 KPI、模型驱动、估值方法、财报重点、护城河和红旗清单补充主报告。
+### 4. 行业专用深度附录
+
+主报告不是给所有公司套同一个模板。skill 会先识别公司所处价值链，再按需加载对应附录：
+
+| 行业 | 专用研究重点 |
+|---|---|
+| SaaS | ARR、NRR、RPO/cRPO、获客效率、Rule of 40、SBC 与反向 DCF。 |
+| 半导体 | 产品/终端、units 与 ASP、库存周期、良率、产能、路线图、出口限制与跨周期估值。 |
+| 银行 | NIM、存款 beta、资产质量、拨备、CET1、流动性与 P/TBV-ROTCE。 |
+| 保险 | 承保利润、准备金、combined ratio、VNB/CSM、偿付能力、投资组合与 P/EV。 |
+| 医药 | 临床证据、成功概率、患者漏斗、专利/独占期、现金 runway 与逐资产 rNPV。 |
+| 消费 | 量价 mix、同店、客流、渠道 sell-through、库存、品牌份额与单位经济。 |
+| 能源 | 产量、储量、递减、成本、差价/套保、维持 capex、商品价格敏感性与 NAV。 |
+| 公用事业 | rate base、allowed/earned ROE、监管案件、资本项目、融资稀释与股息覆盖。 |
+
+混合业务公司只加载足以改变模型或估值的主附录和必要的次附录，避免为了“全面”堆砌无关指标。
+
+### 5. 数据来源与对账
+
+不强制使用 IBKR、Morningstar 或任何单一数据商。默认优先顺序为：
+
+1. 监管申报、交易所公告、政府/监管数据库和公司原始文件。
+2. 交易所/受监管行情、公司正式材料和行业官方统计。
+3. Bloomberg、FactSet、LSEG、S&P Capital IQ、Visible Alpha、Morningstar、Koyfin、Quartr 等专业来源。
+4. 公开行情与财务聚合站，用于补缺和交叉核对。
+5. 媒体、转述和搜索摘要只作线索，尽量追溯原文。
+
+连接器只是访问方式。skill 会在当前 AI 环境中选择可用的最高等级来源，并明确披露降级、延迟、口径和数据冲突。
 
 ## 安装
 
@@ -106,10 +132,11 @@ git clone https://github.com/rollingSirius/equity-research-skill.git .claude/ski
 
 ### Codex / 其他 Agent 工具
 
-本技能是纯 Markdown 指令，加一个标准库 Python 估值脚本。任何能读取文件并运行 Python 的 Agent 都可以使用：
+本技能主体是 Markdown 指令，并附带可复算脚本。任何能读取文件的 Agent 都可以使用；本地 Python **不是安装前提**：
 
 1. 把本仓库放进项目目录，例如 `skills/equity-research/`。
 2. 在 Agent 配置中加入一句：当用户要求研究/分析某只股票时，先读取并遵循 `skills/equity-research/SKILL.md` 的完整流程。
+3. 需要运行估值或检查脚本时，优先使用 Agent 自带代码环境；本机没有 Python，可在 AI 托管代码环境或在线 notebook 中运行，无需先配置本地 Python。
 
 ## 使用
 
@@ -123,6 +150,8 @@ git clone https://github.com/rollingSirius/equity-research-skill.git .claude/ski
 腾讯最新业绩怎么看？按财报模式做深度分析
 帮我比较宁德时代 A 股和港股定价差异
 按 SaaS 行业附录深度分析 Salesforce / CRM
+按半导体行业附录分析台积电的周期位置和估值
+按银行行业附录复盘招商银行最新财报
 ```
 
 也可以显式指定技能：
@@ -153,22 +182,8 @@ git clone https://github.com/rollingSirius/equity-research-skill.git .claude/ski
 - 一组关键数据来源与时间戳。
 - 至少三种估值方法的交叉验证。
 - `scripts/dcf.py` 生成的 DCF / EPV 计算结果。
-- `scripts/check_research_output.py` 生成的财务/估值一致性检查结果。
 - 可复查的估值假设 JSON。
 - 财报模式下的模型与公允价值变动桥。
-
-## 一致性检查脚本
-
-成稿前可以单独运行：
-
-```bash
-python3 scripts/check_research_output.py \
-  --report outputs/公司_代码_报告.md \
-  --assumptions outputs/公司_代码_valuation_assumptions.json \
-  --financials outputs/公司_代码_financials.csv
-```
-
-其中 `--financials` 可选；有历史或预测财务表时建议提供。脚本会按严重程度输出 `P0` 到 `P3`：`P0/P1` 应修正或在报告中显式解释，`P2` 是质量风险，`P3` 是轻提示。可用 `--demo` 自检脚本是否可运行。
 
 ## 文件结构
 
@@ -178,26 +193,35 @@ equity-research-skill/
 ├── references/
 │   ├── report-template.md          # 九章报告模板与表格骨架
 │   ├── earnings-mode.md            # 深度财报模式：覆盖分流、财报分析协议、模型变动桥与九章模板
-│   ├── data-sources.md             # 取数手册：工具探测、行情、Morningstar、申报文件、分析师数据
+│   ├── data-sources.md             # 取数手册：来源分级、工具降级、行情、申报、行业与对账
 │   ├── valuation-methods.md        # 估值方法：DCF、反向 DCF、情景加权、EPV、SOTP 与结论标定
-│   ├── markets-cn-hk.md            # A股/港股/A+H 差异手册
-│   └── industry-saas.md            # SaaS 行业深度研究附录
+│   └── markets-cn-hk.md            # A股/港股/A+H 差异手册
+├── industries/
+│   ├── saas.md                     # SaaS / 订阅软件
+│   ├── semiconductors.md           # 半导体
+│   ├── banks.md                    # 银行
+│   ├── insurance.md                # 保险
+│   ├── pharma.md                   # 医药
+│   ├── consumer.md                 # 消费
+│   ├── energy.md                   # 能源
+│   └── utilities.md                # 公用事业
 ├── scripts/
 │   ├── dcf.py                      # 估值计算器：DCF、反向 DCF、敏感性、概率加权、EPV
 │   └── check_research_output.py    # 财务/估值一致性检查器
-└── EXAMPLE_NVDA.md                 # 示例产出，仅供参考效果，不参与技能执行
+└── Example/
+    └── EXAMPLE_NVDA.md             # 英伟达示例产出，不参与技能执行
 ```
 
-`EXAMPLE_NVDA.md` 只是给用户看最终产出长什么样的样例，不会被 `SKILL.md` 加载，也不影响技能执行。
+[`Example/EXAMPLE_NVDA.md`](Example/EXAMPLE_NVDA.md) 只用于展示最终产出，不会被 `SKILL.md` 自动加载。示例中使用的数据源反映当次运行环境，不代表安装或执行必须具备同一连接器。
 
 ## 依赖
 
 | 依赖 | 必需性 | 说明 |
 |---|---|---|
-| 联网搜索 / 网页抓取 | 必需 | 获取行情、公司公告、监管申报、分析师评级和新闻。 |
-| Python 3 | 必需 | 运行 `scripts/dcf.py` 和 `scripts/check_research_output.py`，仅使用标准库。 |
-| Interactive Brokers (IBKR) MCP | 可选 | 实时行情快照与历史走势；未连接时按降级表改用公开网络行情源。 |
-| Morningstar MCP | 可选 | 有则直取结构化字段，无则网页抓取。 |
+| 联网搜索 / 网页抓取 | 建议 | 获取最新行情、监管申报、行业数据、分析师评级和新闻；离线使用时必须由用户提供材料。 |
+| 可执行 Python 环境 | 运行脚本时需要 | 可用 Agent 自带环境、AI 在线环境、在线 notebook 或本机 Python；不要求本地预装。脚本仅使用标准库。 |
+| IBKR / 其他行情连接器 | 可选 | 有则作为行情路径之一；没有时使用交易所、专业数据 API 或公开行情源。 |
+| Morningstar / 专业数据连接器 | 可选 | 用于外部估值锚、护城河、一致预期和标准化数据；均非必需。 |
 | docx 技能 | 可选 | 仅当需要输出 Word 版报告。 |
 
 ## 设计取向

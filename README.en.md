@@ -15,7 +15,7 @@ The default report language is Chinese.
 Most AI stock analysis stops at “company summary + recent news + vague valuation.” This skill deliberately goes deeper:
 
 - **Two deep modes, not quick summaries**: the full-research mode produces a nine-chapter company report; the earnings mode produces a nine-chapter deep earnings analysis covering expectation quality, segment and KPI bridges, GAAP/non-GAAP reconciliation, cash flow, management signals, and valuation changes.
-- **Reproducible valuation, not improvised price targets**: DCF, reverse DCF, probability-weighted scenario DCF, EPV / three-element analysis, and SOTP-style work must run through `scripts/dcf.py`; key assumptions are saved as JSON.
+- **Reproducible valuation, not improvised price targets**: DCF, reverse DCF, probability-weighted scenario DCF, EPV / three-element analysis, and SOTP-style work run through `scripts/dcf.py`; key assumptions are saved as JSON.
 - **Source discipline, not model memory**: key data must carry source and timestamp; conflicting data must be reconciled; missing data must be explicitly marked.
 - **Buy-side decision framing**: the conclusion must answer, “If this were cash today, would I buy the stock? Why?”
 - **Multi-market coverage**: U.S. stocks, Hong Kong stocks, China A-shares, and A/H dual-listed companies.
@@ -26,11 +26,37 @@ Most AI stock analysis stops at “company summary + recent news + vague valuati
 - **Five-step workflow**: confirm ticker and listing venue -> detect data tools and collect data in parallel -> reconcile sources and timestamps -> write a nine-chapter report -> run valuation cross-checks and deliver a file.
 - **Nine-chapter report**: quick view, business details, competition and moat, management and governance, financial analysis, valuation, analyst consensus, news and catalysts, and investment conclusion.
 - **Nine-chapter earnings mode**: verdict and snapshot, expectation gap, segment/KPI analysis, earnings quality, cash flow and capital allocation, guidance and call signals, competition and market reaction, model/valuation bridge, and thesis/action update.
-- **SaaS industry appendix**: for SaaS, subscription-software, and cloud-software companies, the skill adds ARR, NRR, RPO/cRPO, Rule of 40, sales efficiency, SBC, FCF, and reverse-DCF implied-requirement analysis.
+- **Eight industry appendices**: SaaS, semiconductors, banks, insurance, pharma, consumer, energy, and utilities each receive dedicated KPIs, model drivers, valuation methods, and falsification tests.
 - **Valuation discipline**: at least three methods, including reverse DCF, probability-weighted scenario DCF, EPV / three-element analysis, relative valuation, or SOTP.
 - **Scripted calculations**: all DCF / EPV-style calculations must be run through `scripts/dcf.py`; assumptions are stored as JSON for auditability.
-- **Consistency checks**: `scripts/check_research_output.py` checks valuation labels, scenario probabilities, EPV parameters, margins, FCF, EPS, and cash-flow roll-forward math.
 - **Research hygiene**: separate facts from judgment, timestamp key numbers, reconcile conflicting data, and clearly mark missing data as “not obtained.”
+
+## Industry-Specific Depth
+
+| Industry | Additional research focus |
+|---|---|
+| SaaS | ARR, NRR, RPO/cRPO, sales efficiency, Rule of 40, SBC, and reverse DCF. |
+| Semiconductors | Product/end-market mix, units and ASP, inventory cycle, yield, capacity, roadmaps, and cycle-normalized valuation. |
+| Banks | NIM, deposit beta, credit migration, provisions, CET1, liquidity, and P/TBV versus ROTCE. |
+| Insurance | Underwriting, reserves, combined ratio, VNB/CSM, solvency, investments, and P/EV. |
+| Pharma | Clinical evidence, probability of success, patient funnel, exclusivity, cash runway, and asset-level rNPV. |
+| Consumer | Volume/price/mix, comparable sales, traffic, sell-through, inventory, brand share, and unit economics. |
+| Energy | Production, reserves, decline, costs, differentials/hedges, maintenance capex, commodity sensitivity, and NAV. |
+| Utilities | Rate base, allowed/earned ROE, rate cases, projects, financing dilution, and dividend coverage. |
+
+The skill loads only the primary appendix and, when materially necessary, one secondary appendix for mixed businesses.
+
+## Data Sources
+
+IBKR, Morningstar, and any other single vendor are optional. The default evidence order is:
+
+1. Regulatory filings, exchange disclosures, government/regulator databases, and original company documents.
+2. Exchange or regulated market data, formal company materials, and official industry statistics.
+3. Professional sources such as Bloomberg, FactSet, LSEG, S&P Capital IQ, Visible Alpha, Morningstar, Koyfin, and Quartr.
+4. Public quote and financial aggregators for gaps and cross-checks.
+5. Media, reposts, and search snippets as leads that should be traced to originals.
+
+Connectors are access methods, not credibility guarantees. The skill selects the highest-quality sources available in the current environment and discloses delays, fallbacks, definitions, and conflicts.
 
 ## Best For
 
@@ -51,17 +77,26 @@ equity-research-skill/
 ├── references/
 │   ├── report-template.md          # Nine-chapter report template and table skeletons
 │   ├── earnings-mode.md            # Deep earnings workflow, coverage routing, model bridge, and nine-chapter template
-│   ├── data-sources.md             # Data-source playbook: tools, price data, Morningstar, filings, analysts
+│   ├── data-sources.md             # Source tiers, fallbacks, market data, filings, industry data, reconciliation
 │   ├── valuation-methods.md        # Valuation methods, DCF/EPV/SOTP rules, conclusion calibration
-│   ├── markets-cn-hk.md            # China A-share, Hong Kong, and A/H dual-listing notes
-│   └── industry-saas.md            # SaaS industry deep-research appendix
+│   └── markets-cn-hk.md            # China A-share, Hong Kong, and A/H dual-listing notes
+├── industries/
+│   ├── saas.md                     # SaaS and subscription software
+│   ├── semiconductors.md           # Semiconductors
+│   ├── banks.md                    # Banks
+│   ├── insurance.md                # Insurance
+│   ├── pharma.md                   # Pharmaceuticals and biotech
+│   ├── consumer.md                 # Consumer
+│   ├── energy.md                   # Energy
+│   └── utilities.md                # Utilities
 ├── scripts/
 │   ├── dcf.py                      # Valuation calculator: DCF, reverse DCF, sensitivity, scenario weighting, EPV
 │   └── check_research_output.py    # Financial and valuation consistency checker
-└── EXAMPLE_NVDA.md                 # Example output only; not loaded during skill execution
+└── Example/
+    └── EXAMPLE_NVDA.md             # NVIDIA sample output; not loaded during execution
 ```
 
-`EXAMPLE_NVDA.md` is only a sample report for readers. It is not part of the execution path.
+[`Example/EXAMPLE_NVDA.md`](Example/EXAMPLE_NVDA.md) is only a sample report. Its data sources reflect that particular run and are not installation requirements.
 
 ## Installation
 
@@ -96,10 +131,11 @@ Zip this repository, or download a release package, then upload it from **Settin
 
 ### Codex and Other Agents
 
-This skill is plain Markdown plus a standard-library Python script. Any agent that can read files and run Python can use it:
+The core skill is plain Markdown with reproducible calculation scripts. Any agent that can read files can use it; local Python is not an installation prerequisite:
 
 1. Place the repository in a project directory, such as `skills/equity-research/`.
 2. Add an instruction to your agent config: when the user asks to research or analyze a stock, first read and follow `skills/equity-research/SKILL.md`.
+3. When calculations are needed, use the agent's hosted code runtime, an AI online environment, an online notebook, or local Python.
 
 ## Usage
 
@@ -114,6 +150,8 @@ Deeply analyze AAPL's latest earnings
 Review MSFT earnings and update the valuation
 Compare the A-share and H-share valuation gap for CATL
 Use the SaaS appendix to deeply analyze Salesforce / CRM
+Use the semiconductor appendix to analyze TSMC's cycle position and valuation
+Review JPMorgan's latest earnings using the bank appendix
 ```
 
 Explicit invocation also works:
@@ -129,10 +167,10 @@ Explicit invocation also works:
 
 | Dependency | Required | Notes |
 |---|---|---|
-| Web search / webpage fetching | Yes | Used for filings, Morningstar pages, analyst ratings, and news |
-| Python 3 | Yes | Required for `scripts/dcf.py` and `scripts/check_research_output.py`; both use only the standard library |
-| Interactive Brokers MCP | Optional | Preferred for real-time quotes and price history; falls back to public web data when unavailable |
-| Morningstar MCP | Optional | Preferred for structured fair value, moat, uncertainty, and capital allocation fields |
+| Web search / webpage fetching | Recommended | Used for current filings, prices, industry data, analyst estimates, and news; offline runs require user-provided materials |
+| Executable Python environment | Needed when running scripts | Agent-hosted runtimes, AI online environments, notebooks, or local Python all work; local installation is not required |
+| IBKR or another market-data connector | Optional | One possible quote path; exchange pages, professional APIs, or public sources can be used instead |
+| Morningstar or professional-data connector | Optional | Useful for external valuation anchors, consensus, and standardized data, but never required |
 | DOCX skill | Optional | Only needed when the user asks for a Word report |
 
 ## Outputs
@@ -143,22 +181,8 @@ A full run usually produces:
 - Key data sources with timestamps.
 - At least three valuation cross-checks.
 - DCF / EPV results generated by `scripts/dcf.py`.
-- Financial and valuation consistency checks generated by `scripts/check_research_output.py`.
 - Auditable valuation assumptions in JSON.
 - In earnings mode, a model and fair-value bridge.
-
-## Consistency Checker
-
-Before final delivery, the checker can be run directly:
-
-```bash
-python3 scripts/check_research_output.py \
-  --report outputs/company_ticker_report.md \
-  --assumptions outputs/company_ticker_valuation_assumptions.json \
-  --financials outputs/company_ticker_financials.csv
-```
-
-`--financials` is optional, but recommended when historical or forecast financial tables exist. The script reports `P0` to `P3` findings: `P0/P1` should be fixed or explicitly explained in the report, `P2` marks quality risks, and `P3` is a light warning. Use `--demo` to verify the script itself.
 
 ## Design Philosophy
 

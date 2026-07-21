@@ -8,8 +8,7 @@ description: >-
   fundamentals, fair value, price target, bull/bear case），以及财报/季报/年报/业绩会/电话会/指引更新/earnings
   review/results/10-Q/10-K/earnings call/guidance update。只要出现「公司名或股票代码 +
   任何投研意图」就应触发，即使用户没有明确说"报告"二字。覆盖美股、港股、A股，含 A/H
-  双重上市溢价对比。技能会跑完整流程：探测会话内可用数据源（IBKR/Morningstar
-  连接器等，缺失时自动降级到联网检索并标注），产出结构化九章研报——估值一律由脚本计算，以反向
+  双重上市溢价对比。技能会跑完整流程：按一手披露、监管/交易所、专业数据库和公开来源的优先级探测可用数据，任何单一连接器缺失时自动降级并标注，产出结构化九章研报——估值一律由可执行计算完成，以反向
   DCF、三情景概率加权与三要素/EPV（盈利能力价值）做交叉验证，结论按预注册标定规则映射；财报请求自动进入同等深度的财报模式，即使没有既有深度报告也允许建立首次覆盖基线——并保存为带来源与时间戳的文件。Do NOT use
   for 单纯的一句话报价、宏观/大盘评论、组合层面的资产配置、或非股票类工具（债券/期货/外汇本身）。
 ---
@@ -40,17 +39,18 @@ description: >-
 - 确认**报告币种/财年口径**：注意很多公司财年≠自然年（见 `references/data-sources.md` 的财年陷阱）。
 
 ### Step 1 · 并行采集数据
-**先探测工具，再并行采集**：确认会话内实际可用的连接器与工具（含需先加载的延迟工具），按 `references/data-sources.md` 第 0 节的降级表确定每条数据线的路径——任何工具缺失或连续失败都不中断流程，降级并在来源清单标注。随后**尽量在同一轮并行发起**三条线：
+**先探测工具，再并行采集**：完整读取 `references/data-sources.md`，确认会话内可用的联网、浏览器、连接器、文件解析和计算工具。按 Tier 1–5 来源层级选择路径，**不要求 IBKR、Morningstar 或任何单一付费数据源**；缺失或连续失败时降级并在来源清单标注。随后尽量并行发起四条线：
 
-1. **IBKR（实时/历史价格、市场数据）** — 已连接的 Interactive Brokers MCP。先 `search_contracts` 解析出正确合约，再 `get_price_snapshot` 取现价/涨跌/52周高低/YTD/股息率，`get_price_history` 取走势。**务必挑对合约**（避开同名生物公司、海外重复挂牌、杠杆 ETF）。详见 `references/data-sources.md`；A股/港股合约差异见 `references/markets-cn-hk.md`。
-2. **Morningstar（公允价值/护城河/星级）** — 优先用已接入的 Morningstar 专用连接器；无连接器时联网获取（fetch morningstar.com 个股页或其分析文章，多市场 URL 规则见 data-sources.md 第 2 节）。取公允价值估算、Economic Moat 评级、星级、不确定性评级、资本配置评价。
-3. **联网搜索（财报/分部/指引/分析师/新闻）** — 最新季报与电话会要点、按业务线/地区/客户的收入拆分、管理层指引、卖方评级与目标价分布、近 1–3 个月新闻与催化剂、高管背景与内部持股（SEC 文件）。检索技巧见 `references/data-sources.md`。
+1. **一手披露**：监管申报、交易所公告、公司 IR、财报附件、治理与股权文件。关键财务数据以此为事实基准。
+2. **行情与外部估值锚**：从当前可用的交易所/受监管行情、专业数据终端、数据 API、券商连接器或公开行情页中择优；对估值敏感的价格用第二来源复核。Morningstar 的公允价值/护城河可用但非必需。
+3. **一致预期、电话会与新闻**：优先能显示统计日期和覆盖家数的专业平台及公司原始材料，再用可信媒体和公开聚合补缺。
+4. **行业与宏观**：使用匹配行业附录列出的监管、政府和行业官方统计，商业数据库和替代数据只作有口径说明的补充。
 
 财务历史（近 5 年营收/毛利率/经营利润率/FCF/ROIC/ROE、资产负债表）优先取自申报原文：美股 SEC 10-K/10-Q/8-K，A股巨潮资讯网，港股披露易（差异见 markets-cn-hk.md）。
 
 财报模式另须并行采集财报新闻稿、监管申报、演示材料、电话会文字稿、可核验的一致预期与业绩后价格反应；来源优先级、历史窗口和对账字段严格按 `references/earnings-mode.md` 执行。
 
-若标的是 SaaS / 订阅软件 / 云软件公司，在撰写业务、财务、财报和估值章节前读取 `references/industry-saas.md`，并按其中 KPI、模型、估值和红旗要求补充主模板。
+完成业务分类后，读取匹配的行业附录：SaaS/订阅软件 `industries/saas.md`；半导体 `industries/semiconductors.md`；银行 `industries/banks.md`；保险 `industries/insurance.md`；医药 `industries/pharma.md`；消费 `industries/consumer.md`；能源 `industries/energy.md`；公用事业 `industries/utilities.md`。多业务公司选择价值贡献最大的主附录；只有次要业务足以改变模型或估值时再读第二个，不一次加载全部附录。
 
 ### Step 2 · 对账与时间戳
 - 汇总每个关键数字的来源与日期；冲突项按纪律对账。
@@ -65,10 +65,10 @@ description: >-
 
 ### Step 4 · 估值（多方法交叉验证）
 - **至少三种方法**并给出区间，最后汇总成表，给出相对当前股价的隐含上行/下行空间。
-- **所有 DCF 类计算一律用 `scripts/dcf.py` 执行（假设写成 JSON），禁止心算**——含正向三阶段、反向 DCF、WACC×g 敏感性、三情景概率加权。高估值/叙事型标的以反向 DCF 作为估值章节的开篇框架。
+- **所有 DCF 类计算一律用 `scripts/dcf.py` 执行（假设写成 JSON），禁止心算**——含正向三阶段、反向 DCF、WACC×g 敏感性、三情景概率加权。优先用当前 Agent/本机 Python；本机没有 Python 时，把同一脚本放到 AI 托管代码环境、在线 notebook 或其他可执行 Python 环境运行，不要求用户先安装 Python。高估值/叙事型标的以反向 DCF 作为估值章节的开篇框架。
 - **业务简单、利润稳定或缺乏可靠前瞻共识的标的，优先/并行用三要素/EPV 法（`dcf.py` 的 `epv` 块，同样禁止心算）**，并以 EPV÷净资产的多年趋势交叉验证第三章护城河判断；EPV 资本成本与 DCF 的 WACC 口径一致。冲突时以 Greenwald《价值投资：从格雷厄姆到巴菲特》为准。
 - **结论标签（低估/合理/高估 + 动作）按 `valuation-methods.md` 第 8 节的预注册标定规则映射产出**，第一章与第九章必须与之可复算地一致；偏离规则须显式写出理由。
-- **成稿前运行 `scripts/check_research_output.py` 做财务/估值一致性检查**：至少传入报告和估值 JSON；若有历史/预测财务 CSV，也一并传入。P0/P1 问题必须修正或在报告中显式解释。
+- **成稿前运行 `scripts/check_research_output.py`**：至少传入报告和估值 JSON；若有历史/预测财务 CSV，也一并传入。本机无 Python 时按上一条在 AI 托管或在线环境运行。P0/P1 问题必须修正或在报告中显式解释。
 - 财报模式必须把新财报与指引转化为模型假设，展示关键预测和公允价值的变动桥；若没有旧模型，建立可审计的新基线。无论哪种情况，只要给出估值或投资动作，仍须至少三种方法交叉验证，不得只用业绩后 P/E 或卖方目标价代替完整估值。
 - 方法细节、情景构建纪律、敏感性、行业特定指标见 `references/valuation-methods.md`。
 
@@ -81,12 +81,12 @@ description: >-
 
 - `references/report-template.md` — 九章报告模板与表格骨架。**撰写正文前必读。**
 - `references/earnings-mode.md` — 深度财报模式：来源层级、持续覆盖/首次覆盖分流、预期差与质量分析、模型变动桥及九章模板。**财报、业绩会、电话会或指引更新请求必读。**
-- `references/data-sources.md` — IBKR / Morningstar / SEC / 分析师数据的具体取数方法、字段、对账与财年口径规则，以及常见坑位。**采集数据前必读。**
+- `references/data-sources.md` — 一手披露、监管/交易所、专业数据库、公开行情、行业宏观和替代数据的来源优先级、降级与对账规则。**采集数据前必读。**
 - `references/valuation-methods.md` — 相对估值、正向/反向 DCF、情景加权、**三要素/EPV（资产重置·盈利能力价值·franchise 成长）**、SOTP、行业特定指标，及**结论标定规则**。**做估值章节前必读。**
 - `references/markets-cn-hk.md` — A股/港股/A+H 双重上市的差异项：合约解析、披露源、Morningstar 覆盖、财年、A/H 溢价模块。**非美股或双重上市标的必读。**
-- `references/industry-saas.md` — SaaS/订阅软件行业附录：来源层级、KPI 字典、ARR/NRR/RPO/Rule of 40、模型驱动、估值方法、财报模式重点、护城河和红旗。**SaaS、云软件、订阅软件标的必读。**
-- `scripts/dcf.py` — 估值计算器（三阶段/反向/敏感性/概率加权/标定 + `epv` 块：EPV·护城河验证·franchise 成长·买点阶梯）。用法：`python scripts/dcf.py --config <假设.json>`，`--demo` 可自检。
-- `scripts/check_research_output.py` — 财务/估值一致性检查器：复核来源时间戳、估值标签、DCF 情景概率、EPV 参数、利润率/FCF/EPS/现金流勾稽与同比环比。用法：`python scripts/check_research_output.py --report <报告.md> --assumptions <估值.json> --financials <财务.csv>`，`--demo` 可自检。
+- `industries/saas.md`、`semiconductors.md`、`banks.md`、`insurance.md`、`pharma.md`、`consumer.md`、`energy.md`、`utilities.md` — 八类行业专用附录。按 Step 1 的业务分类读取匹配文件。
+- `scripts/dcf.py` — 估值计算器（三阶段/反向/敏感性/概率加权/标定 + EPV）。可在本地或 AI/在线 Python 环境执行。
+- `scripts/check_research_output.py` — 成稿前的财务/估值检查脚本。可在本地或 AI/在线 Python 环境执行。
 
 ## 四、质量自检（成稿前）
 
