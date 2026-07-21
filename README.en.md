@@ -12,16 +12,18 @@ The default report language is Chinese.
 
 Most AI stock analysis stops at “company summary + recent news + vague valuation.” This skill deliberately goes deeper:
 
-- **Deep research, not quick summaries**: the default output is a nine-chapter equity research report covering business quality, competition, moat, governance, financials, valuation, analyst views, catalysts, and the final investment action.
+- **Two deep modes, not quick summaries**: the full-research mode produces a nine-chapter company report; the earnings mode produces a nine-chapter deep earnings analysis covering expectation quality, segment and KPI bridges, GAAP/non-GAAP reconciliation, cash flow, management signals, and valuation changes.
 - **Reproducible valuation, not improvised price targets**: DCF, reverse DCF, probability-weighted scenario DCF, EPV / three-element analysis, and SOTP-style work must run through `scripts/dcf.py`; key assumptions are saved as JSON.
 - **Source discipline, not model memory**: key data must carry source and timestamp; conflicting data must be reconciled; missing data must be explicitly marked.
 - **Buy-side decision framing**: the conclusion must answer, “If this were cash today, would I buy the stock? Why?”
 - **Multi-market coverage**: U.S. stocks, Hong Kong stocks, China A-shares, and A/H dual-listed companies.
+- **Earnings-first initiation**: no prior report or model is required. The skill builds at least a three-year and eight-quarter baseline and clearly separates initiation from continuing-coverage changes.
 
 ## What It Does
 
 - **Five-step workflow**: confirm ticker and listing venue → detect data tools and collect data in parallel → reconcile sources and timestamps → write a nine-chapter report → run valuation cross-checks and deliver a file.
 - **Nine-chapter report**: quick view, business details, competition and moat, management and governance, financial analysis, valuation, analyst consensus, news and catalysts, and investment conclusion.
+- **Nine-chapter earnings mode**: verdict and snapshot, expectation gap, segment/KPI analysis, earnings quality, cash flow and capital allocation, guidance and call signals, competition and market reaction, model/valuation bridge, and thesis/action update.
 - **Valuation discipline**: at least three methods, including reverse DCF, probability-weighted scenario DCF, EPV / three-element analysis, relative valuation, or SOTP.
 - **Scripted calculations**: all DCF / EPV-style calculations must be run through `scripts/dcf.py`; assumptions are stored as JSON for auditability.
 - **Research hygiene**: separate facts from judgment, timestamp key numbers, reconcile conflicting data, and clearly mark missing data as “not obtained.”
@@ -33,6 +35,7 @@ equity-research-skill/
 ├── SKILL.md                        # Main skill file: trigger rules and workflow
 ├── references/
 │   ├── report-template.md          # Nine-chapter report template and table skeletons
+│   ├── earnings-mode.md            # Deep earnings workflow, coverage routing, model bridge, and nine-chapter template
 │   ├── data-sources.md             # Data-source playbook: tools, price data, Morningstar, filings, analysts
 │   ├── valuation-methods.md        # Valuation methods, DCF/EPV/SOTP rules, conclusion calibration
 │   └── markets-cn-hk.md            # China A-share, Hong Kong, and A/H dual-listing notes
@@ -75,6 +78,8 @@ Research NVDA for me
 Analyze whether Marvell is worth buying
 Is AMD overvalued?
 帮我研究一下 AAPL
+Deeply analyze AAPL's latest earnings
+Review MSFT earnings and update the valuation
 ```
 
 Explicit invocation also works:

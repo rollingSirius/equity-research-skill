@@ -15,16 +15,19 @@ It turns “research this stock” into an institutional-style public-equity res
 
 多数 AI 股票分析会停在“公司简介 + 最近新闻 + 模糊估值”。这个 skill 刻意往更深处走：
 
-- **深度研究，而非快餐摘要**：默认输出九章个股研报，覆盖业务、竞争、治理、财务、估值、卖方观点、新闻催化剂与最终动作。
+- **两种深度模式，而非快餐摘要**：完整研究模式输出九章个股研报；财报模式输出九章财报深度分析，覆盖预期差质量、分部与 KPI、GAAP/Non-GAAP、现金流、电话会、模型与估值变动。
 - **可复算估值，而非随口目标价**：DCF、反向 DCF、三情景概率加权、EPV / 三要素法、SOTP 等估值必须由 `scripts/dcf.py` 执行，关键假设以 JSON 留档。
 - **来源纪律，而非模型记忆**：关键数据必须标注来源与时间戳；冲突数据要对账；缺失数据必须写“未获取到”。
 - **买方视角，而非漂亮文章**：结论按预注册标定规则映射，要求回答“如果今天这是一笔现金，我会买入它吗？为什么？”
 - **多市场覆盖**：支持美股、港股、A 股与 A/H 双重上市对比。
+- **允许从财报开始首次覆盖**：没有旧研报或模型也能使用财报模式；skill 会补建至少 3 年、8 个季度的历史基线，并明确区分首次覆盖与持续更新。
 
 ## What It Does
 
 - **Five-step workflow**: confirm ticker and listing venue → detect data tools and collect data in parallel → reconcile sources and timestamps → write a nine-chapter report → run valuation cross-checks and deliver a file.
 - **Nine-chapter report**: quick view, business details, competition and moat, management and governance, financial analysis, valuation, analyst consensus, news and catalysts, and investment conclusion.
+- **Deep earnings mode**: a separate nine-chapter workflow for earnings quality, expectation gaps, segment/KPI bridges, GAAP/non-GAAP reconciliation, cash conversion, management signals, model revisions, and valuation impact.
+- **No prior report required**: when no earlier coverage exists, the skill performs an earnings-first initiation and builds a historical, thesis, forecast, and valuation baseline instead of fabricating changes.
 - **Valuation discipline**: reverse DCF, probability-weighted scenario DCF, EPV / three-element analysis, relative valuation, or SOTP.
 - **Scripted calculations**: DCF and EPV-style work must run through `scripts/dcf.py`; assumptions are saved as JSON for auditability.
 - **Research hygiene**: separate facts from judgment, timestamp key numbers, reconcile conflicting data, and clearly mark missing data.
@@ -36,6 +39,7 @@ equity-research-skill/
 ├── SKILL.md                        # 技能主文件：触发条件 + 工作流程
 ├── references/
 │   ├── report-template.md          # 九章报告模板与表格骨架
+│   ├── earnings-mode.md            # 深度财报模式：覆盖分流、财报分析协议、模型变动桥与九章模板
 │   ├── data-sources.md             # 取数手册：工具探测、行情、Morningstar、申报文件、分析师数据
 │   ├── valuation-methods.md        # 估值方法：DCF、反向 DCF、情景加权、EPV、SOTP 与结论标定
 │   └── markets-cn-hk.md            # A股/港股/A+H 差异手册
@@ -79,6 +83,8 @@ Zip this repository, or download a release package, then upload it from **Settin
 帮我研究一下 NVDA
 分析下 Marvell 值不值得买
 Is AMD overvalued?
+深度分析一下 AAPL 最新财报
+Review MSFT earnings and update the valuation
 ```
 
 也可以显式指定技能：
