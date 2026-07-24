@@ -322,7 +322,7 @@ def growth_rate(cur, prev):
 
 
 def check_forensics(rows, aliases, path, issues) -> None:
-    """取证会计检查：应计质量 / 现金转化 / DSO与递延背离 / Beneish M-Score。
+    """财报质量核查检查：应计质量 / 现金转化 / DSO与递延背离 / Beneish M-Score。
     列名要求见 references/forensic-accounting.md 第 7 节；缺列自动跳过对应项。"""
     ni = pick(aliases, ["net_income", "netincome", "净利润"])
     cfo = pick(aliases, ["cfo", "operating_cash_flow", "cash_from_operations", "经营现金流"])
