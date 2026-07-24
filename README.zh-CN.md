@@ -236,10 +236,11 @@ equity-research-skill/
 │   ├── dcf.py                      # 估值计算器：DCF、反向 DCF、敏感性、概率加权、EPV、EVA、PVGO、蒙特卡洛、仓位
 │   └── check_research_output.py    # 财务/估值一致性检查器 + 财报质量核查（应计/M-Score/背离）
 └── Example/
-    └── EXAMPLE_NVDA.md             # 英伟达示例产出，不参与技能执行
+    ├── EXAMPLE_NVDA.md             # 英伟达示例产出，不参与技能执行
+    └── EXAMPLE_GOOGL.md            # Alphabet 示例产出（v2 完整模式），不参与技能执行
 ```
 
-[`Example/EXAMPLE_NVDA.md`](Example/EXAMPLE_NVDA.md) 只用于展示最终产出，不会被 `SKILL.md` 自动加载。示例中使用的数据源反映当次运行环境，不代表安装或执行必须具备同一连接器。
+[`Example/EXAMPLE_NVDA.md`](Example/EXAMPLE_NVDA.md) 与 [`Example/EXAMPLE_GOOGL.md`](Example/EXAMPLE_GOOGL.md)（v2 完整模式示例，含预期差对比表、财报质量核查、五法估值与反方论证）只用于展示最终产出，不会被 `SKILL.md` 自动加载。示例中使用的数据源反映当次运行环境，不代表安装或执行必须具备同一连接器。
 
 ## 依赖
 

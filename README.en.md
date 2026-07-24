@@ -69,6 +69,8 @@ Deep-dive AAPL's latest earnings
 Compare CATL's A-share vs H-share pricing
 ```
 
+Sample outputs: [`Example/EXAMPLE_NVDA.md`](Example/EXAMPLE_NVDA.md) · [`Example/EXAMPLE_GOOGL.md`](Example/EXAMPLE_GOOGL.md) (v2 full-mode example).
+
 **Output defaults to PDF** when no format is specified; `.md`, `.docx`, and `.xlsx` (valuation workbook) are available on request. The user receives the report only — assumption JSONs, script outputs, and CSVs are internal working files kept for reproducibility and summarized in the report appendix.
 
 ## Disclaimer
