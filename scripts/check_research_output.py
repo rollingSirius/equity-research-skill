@@ -87,6 +87,18 @@ def close_enough(a: float, b: float, rel_tol: float = 0.015, abs_tol: float = 0.
     return abs(a - b) <= max(abs_tol, rel_tol * max(abs(a), abs(b), 1.0))
 
 
+
+
+def detect_labels(text: str) -> List[str]:
+    """长标签优先匹配，避免“显著低估”被同时计为“低估”。"""
+    found: List[str] = []
+    masked = text
+    for label in sorted(LABELS, key=len, reverse=True):
+        if label in masked:
+            found.append(label)
+            masked = masked.replace(label, "■" * len(label))
+    return found
+
 def calibrate(price: float, lo: float, hi: float) -> str:
     if price < lo * 0.50:
         return "显著低估"
@@ -146,7 +158,7 @@ def check_report(path: str, assumptions: Optional[Dict], issues: List[Issue]) ->
         hi = parse_number(assumptions.get("range_high"))
         if price is not None and lo is not None and hi is not None and hi >= lo:
             expected = calibrate(price, lo, hi)
-            found_labels = [label for label in LABELS if label in text]
+            found_labels = detect_labels(text)
             if expected not in found_labels:
                 add(
                     issues,
@@ -301,6 +313,99 @@ def check_growth(
             )
 
 
+
+
+def growth_rate(cur, prev):
+    if cur is None or prev in (None, 0):
+        return None
+    return cur / prev - 1
+
+
+def check_forensics(rows, aliases, path, issues) -> None:
+    """取证会计检查：应计质量 / 现金转化 / DSO与递延背离 / Beneish M-Score。
+    列名要求见 references/forensic-accounting.md 第 7 节；缺列自动跳过对应项。"""
+    ni = pick(aliases, ["net_income", "netincome", "净利润"])
+    cfo = pick(aliases, ["cfo", "operating_cash_flow", "cash_from_operations", "经营现金流"])
+    ta = pick(aliases, ["total_assets", "totalassets", "总资产"])
+    rev = pick(aliases, ["revenue", "sales", "收入", "营收"])
+    rec = pick(aliases, ["receivables", "accounts_receivable", "应收账款", "应收"])
+    dfr = pick(aliases, ["deferred_revenue", "contract_liabilities", "递延收入", "合同负债"])
+    gp = pick(aliases, ["gross_profit", "grossprofit", "毛利"])
+    ppe = pick(aliases, ["ppe", "net_ppe", "固定资产"])
+    ca = pick(aliases, ["current_assets", "流动资产"])
+    dep = pick(aliases, ["depreciation", "折旧"])
+    sga = pick(aliases, ["sga", "sg_a", "销售管理费用"])
+    tl = pick(aliases, ["total_liabilities", "totalliabilities", "总负债"])
+
+    # -- 应计比率与现金转化（逐行 + 趋势） --
+    conv_series = []
+    for idx, row in enumerate(rows):
+        label = row.get(pick(aliases, ["period", "fiscal_period", "date", "财期", "期间"]) or "", f"row {idx + 2}")
+        ni_v, cfo_v, ta_v = row_num(row, ni), row_num(row, cfo), row_num(row, ta)
+        if ni_v is not None and cfo_v is not None and ta_v not in (None, 0):
+            accr = (ni_v - cfo_v) / ta_v
+            if accr > 0.10:
+                add(issues, "P1", "FORENSIC_HIGH_ACCRUALS", f"{label} 总应计比率 {accr:.1%} > 10%，盈利质量红旗。",
+                    f"net_income={ni_v}, cfo={cfo_v}, total_assets={ta_v}", path)
+            elif accr > 0.05:
+                add(issues, "P2", "FORENSIC_ELEVATED_ACCRUALS", f"{label} 总应计比率 {accr:.1%} 偏高（5–10%）。", "", path)
+        if ni_v not in (None, 0) and cfo_v is not None and ni_v > 0:
+            conv_series.append((label, cfo_v / ni_v))
+    if len(conv_series) >= 3:
+        last = conv_series[-1][1]
+        declining = all(conv_series[i][1] >= conv_series[i + 1][1] for i in range(len(conv_series) - 3, len(conv_series) - 1))
+        if last < 0.8 and declining:
+            add(issues, "P2", "FORENSIC_CASH_CONVERSION_DECLINING",
+                f"现金转化率降至 {last:.0%}（<80% 且连续下滑），利润与现金背离。",
+                ", ".join(f"{l}={v:.0%}" for l, v in conv_series[-3:]), path)
+
+    # -- DSO / 递延收入 与收入增速背离（末两行） --
+    if len(rows) >= 2 and rev:
+        r_g = growth_rate(row_num(rows[-1], rev), row_num(rows[-2], rev))
+        if rec:
+            rec_g = growth_rate(row_num(rows[-1], rec), row_num(rows[-2], rec))
+            if r_g is not None and rec_g is not None and rec_g - r_g > 0.15:
+                add(issues, "P2", "FORENSIC_DSO_DIVERGENCE",
+                    f"应收增速 {rec_g:.0%} 超收入增速 {r_g:.0%} 逾 15pp，警惕塞货/放宽信用/提前确认。", "", path)
+        if dfr:
+            d_g = growth_rate(row_num(rows[-1], dfr), row_num(rows[-2], dfr))
+            if r_g is not None and d_g is not None and r_g > 0 and d_g < 0:
+                add(issues, "P2", "FORENSIC_DEFERRED_DIVERGENCE",
+                    f"收入增长 {r_g:.0%} 而递延收入下降 {d_g:.0%}，订阅型公司此为透支未来信号。", "", path)
+
+    # -- Beneish M-Score（末两行，需全列） --
+    needed = [rev, rec, gp, ppe, ca, dep, sga, tl, ta, ni, cfo]
+    if len(rows) >= 2 and all(needed):
+        t, p = rows[-1], rows[-2]
+        try:
+            def v(row, col):
+                x = row_num(row, col)
+                if x is None:
+                    raise ValueError(col)
+                return x
+            dsri = (v(t, rec) / v(t, rev)) / (v(p, rec) / v(p, rev))
+            gmi = (v(p, gp) / v(p, rev)) / (v(t, gp) / v(t, rev))
+            aqi_t = 1 - (v(t, ca) + v(t, ppe)) / v(t, ta)
+            aqi_p = 1 - (v(p, ca) + v(p, ppe)) / v(p, ta)
+            aqi = aqi_t / aqi_p if aqi_p else 1.0
+            sgi = v(t, rev) / v(p, rev)
+            depi = (v(p, dep) / (v(p, dep) + v(p, ppe))) / (v(t, dep) / (v(t, dep) + v(t, ppe)))
+            sgai = (v(t, sga) / v(t, rev)) / (v(p, sga) / v(p, rev))
+            tata = (v(t, ni) - v(t, cfo)) / v(t, ta)
+            lvgi = (v(t, tl) / v(t, ta)) / (v(p, tl) / v(p, ta))
+            m = (-4.84 + 0.92 * dsri + 0.528 * gmi + 0.404 * aqi + 0.892 * sgi
+                 + 0.115 * depi - 0.172 * sgai + 4.679 * tata - 0.327 * lvgi)
+            detail = (f"M={m:.2f} | DSRI={dsri:.2f} GMI={gmi:.2f} AQI={aqi:.2f} SGI={sgi:.2f} "
+                      f"DEPI={depi:.2f} SGAI={sgai:.2f} TATA={tata:.3f} LVGI={lvgi:.2f}")
+            if m > -1.78:
+                add(issues, "P1", "FORENSIC_MSCORE_FLAG",
+                    f"Beneish M-Score = {m:.2f} > -1.78，落入盈余操纵可疑区，逐项手工核查。", detail, path)
+            else:
+                add(issues, "P3", "FORENSIC_MSCORE_INFO", f"Beneish M-Score = {m:.2f}（阈值 -1.78，未越限）。", detail, path)
+        except (ValueError, ZeroDivisionError):
+            add(issues, "P3", "FORENSIC_MSCORE_SKIPPED", "M-Score 所需列存在但含缺失/零值，跳过计算。", "", path)
+
+
 def check_financials(path: str, issues: List[Issue]) -> None:
     rows, aliases = load_csv(path)
     if not rows:
@@ -369,6 +474,8 @@ def check_financials(path: str, issues: List[Issue]) -> None:
 
     check_growth(issues, path, rows, period, revenue, yoy_revenue, 4, "REVENUE_YOY_MISMATCH", "营收同比")
     check_growth(issues, path, rows, period, revenue, qoq_revenue, 1, "REVENUE_QOQ_MISMATCH", "营收环比")
+
+    check_forensics(rows, aliases, path, issues)
 
 
 def sort_issues(issues: Iterable[Issue]) -> List[Issue]:
